@@ -396,12 +396,23 @@
         return;
       }
       navigator.geolocation.clearWatch?.(watchId);
-      watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          const { latitude, longitude, accuracy, speed } = pos.coords;
-          const spdKmh = speed == null ? 0 : speed * 3.6;
-          updateUI(latitude, longitude, accuracy, spdKmh);
-          setLive(true);
+      watchId = navigator.geolocation.watchPosition((pos) => {
+  const { latitude, longitude, accuracy, speed } = pos.coords;
+
+  const speedKmh = speed == null ? 0 : speed * 3.6;
+
+  // 🔥 KIRIM KE FIREBASE DI SINI
+  db.ref("tracking/" + shareId).set({
+    lat: latitude,
+    lng: longitude,
+    speed: speedKmh,
+    acc: accuracy,
+    time: Date.now()
+  });
+
+  // update UI kamu
+  updateUI(latitude, longitude, accuracy, speedKmh);
+});
         },
         (err) => {
           setLive(false);
@@ -437,5 +448,24 @@
     }
     setLive(false);
     timeText.textContent = nowStr();
-  </script></body>
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCZpum5HVxo3l_u6NTTocac07rcXNqruQE",
+  authDomain: "fudzzdrive.firebaseapp.com",
+  databaseURL: "https://fudzzdrive-default-rtdb.firebaseio.com",
+  projectId: "fudzzdrive",
+  storageBucket: "fudzzdrive.firebasestorage.app",
+  messagingSenderId: "458154156624",
+  appId: "1:458154156624:web:583e8060ec59873665a755"
+};
+
+// INIT
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+</script>
+</body>
 </html>
