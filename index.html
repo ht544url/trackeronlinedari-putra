@@ -1,0 +1,441 @@
+<!DOCTYPE html><html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FudzzDrivE — Live Track</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root{
+      --bg:#eef3f8;
+      --panel:rgba(255,255,255,.78);
+      --panel-strong:#fff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#dbe3ee;
+      --shadow:0 18px 50px rgba(15,23,42,.10);
+      --shadow-2:0 10px 24px rgba(15,23,42,.08);
+      --accent:#2563eb;
+      --accent-2:#0ea5e9;
+      --good:#16a34a;
+      --bad:#ef4444;
+      --radius:24px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(14,165,233,.12), transparent 30%),
+        radial-gradient(circle at top right, rgba(37,99,235,.12), transparent 24%),
+        linear-gradient(180deg,#f7fbff, #eef3f8 45%, #e9f0f7);
+    }
+    .wrap{max-width:1220px;margin:0 auto;padding:18px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+    .brand,.chip,.card,.stat,.floating{
+      background:var(--panel);
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+      border:1px solid rgba(219,227,238,.9);
+      box-shadow:var(--shadow);
+    }
+    .brand{
+      display:flex;align-items:center;gap:14px;
+      padding:14px 16px;border-radius:22px;
+    }
+    .logo{
+      width:54px;height:54px;border-radius:18px;
+      display:grid;place-items:center;
+      background:linear-gradient(135deg,var(--accent-2),var(--accent));
+      color:#fff;font-weight:800;font-size:20px;
+      box-shadow:0 12px 26px rgba(37,99,235,.26);
+      flex:none;
+    }
+    .brand h1{margin:0;font-size:20px;line-height:1.1}
+    .brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .chip{
+      border-radius:999px;padding:10px 14px;font-size:13px;font-weight:700;
+      color:#1d4ed8;display:inline-flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,.82);
+    }
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}
+    .card{border-radius:var(--radius);overflow:hidden;background:var(--panel)}
+    .card-bd{padding:16px}
+    .card-hd{padding:16px 16px 0}
+    .title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .title h2{margin:0;font-size:18px}
+    .sub{color:var(--muted);font-size:13px}
+    .hero{
+      border-radius:22px;overflow:hidden;
+      background:linear-gradient(180deg,#ffffff, #f6fbff);
+      border:1px solid #e6edf6;
+      margin-bottom:14px;
+      min-height:210px;
+      position:relative;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .hero svg{width:min(92%, 560px);height:auto;filter:drop-shadow(0 16px 26px rgba(15,23,42,.16))}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .stat{background:var(--panel-strong);border-radius:18px;padding:14px}
+    .stat span{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+    .stat strong{font-size:18px}
+    .controls{display:grid;gap:12px}
+    .formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,select{
+      width:100%;border:1px solid var(--line);border-radius:16px;padding:13px 14px;
+      background:#fff;font:inherit;outline:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+    }
+    input:focus,select:focus{border-color:#93c5fd;box-shadow:0 0 0 4px rgba(59,130,246,.12)}
+    .btnrow{display:flex;flex-wrap:wrap;gap:10px}
+    button{
+      border:0;border-radius:16px;padding:13px 16px;font:inherit;font-weight:700;cursor:pointer;
+      transition:transform .08s ease, opacity .2s ease, box-shadow .2s ease;
+    }
+    button:active{transform:translateY(1px)}
+    .primary{background:linear-gradient(135deg,var(--accent-2),var(--accent));color:#fff;box-shadow:0 12px 24px rgba(37,99,235,.24)}
+    .ghost{background:#fff;color:#0f172a;border:1px solid var(--line)}
+    .danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+    .status{
+      display:flex;align-items:flex-start;gap:10px;padding:14px;border-radius:18px;
+      background:#f8fafc;border:1px solid var(--line);
+    }
+    .dot{width:12px;height:12px;border-radius:50%;background:#94a3b8;margin-top:4px;flex:none}
+    .dot.on{background:var(--good);box-shadow:0 0 0 6px rgba(22,163,74,.12)}
+    .status strong{display:block;margin-bottom:4px}
+    .small{color:var(--muted);font-size:12px;line-height:1.55}
+    .info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .info{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px}
+    .info span{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    .info strong{font-size:17px}
+    .linkbox{
+      padding:12px 14px;border-radius:16px;border:1px dashed #cbd5e1;
+      background:#f8fafc;font-size:13px;word-break:break-all;color:#0f172a
+    }
+    .mapWrap{
+      height:420px;border-radius:22px;overflow:hidden;border:1px solid #e6edf6;
+      box-shadow:var(--shadow-2);background:#dbeafe;
+    }
+    #map{height:100%;width:100%}
+    .floating{
+      position:absolute;left:16px;top:16px;z-index:500;
+      border-radius:18px;padding:10px 12px;display:flex;gap:12px;align-items:center;
+      max-width:calc(100% - 32px);
+    }
+    .floating b{display:block}
+    .floating small{display:block;color:var(--muted)}
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      border-radius:999px;padding:7px 10px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;
+    }
+    .foot{margin-top:12px;color:var(--muted);font-size:12px;line-height:1.55}
+    .mapCard{position:relative}
+    @media (max-width: 980px){.grid{grid-template-columns:1fr}.stats,.info-grid,.formgrid{grid-template-columns:1fr}.mapWrap{height:360px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">FD</div>
+        <div>
+          <h1>FudzzDrivE</h1>
+          <p>★ 4.4 (201+ Pelanggan) • Sejak 2022</p>
+        </div>
+      </div>
+      <div class="chip" id="liveChip">● Siap dipakai</div>
+    </div><div class="grid">
+  <section class="card">
+    <div class="card-bd">
+      <div class="hero">
+        <svg viewBox="0 0 900 520" aria-hidden="true">
+          <defs>
+            <linearGradient id="g1" x1="0" x2="1">
+              <stop offset="0%" stop-color="#0f172a"/>
+              <stop offset="100%" stop-color="#1e293b"/>
+            </linearGradient>
+            <linearGradient id="g2" x1="0" x2="1">
+              <stop offset="0%" stop-color="#0ea5e9"/>
+              <stop offset="100%" stop-color="#2563eb"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="500" cy="350" rx="160" ry="145" fill="#dbeafe" opacity=".8"/>
+          <rect x="240" y="260" width="440" height="56" rx="28" fill="url(#g1)" transform="rotate(-29 240 260)"/>
+          <rect x="235" y="265" width="440" height="30" rx="15" fill="#334155" transform="rotate(-29 235 265)" opacity=".65"/>
+          <circle cx="445" cy="226" r="92" fill="#f8fafc"/>
+          <circle cx="458" cy="213" r="76" fill="#cbd5e1" opacity=".18"/>
+          <circle cx="453" cy="200" r="56" fill="#ef4444"/>
+          <path d="M409 187c18-18 73-18 96 4" stroke="#b91c1c" stroke-width="10" stroke-linecap="round" opacity=".8"/>
+          <path d="M412 212c18 16 60 19 92 7" stroke="#b91c1c" stroke-width="10" stroke-linecap="round" opacity=".7"/>
+          <path d="M420 233c19 12 45 14 75 2" stroke="#b91c1c" stroke-width="10" stroke-linecap="round" opacity=".65"/>
+          <rect x="210" y="295" width="300" height="120" rx="60" fill="#ffffff"/>
+          <rect x="300" y="323" width="150" height="68" rx="34" fill="#0f172a"/>
+          <rect x="170" y="262" width="130" height="45" rx="22" fill="#0f172a" transform="rotate(26 170 262)"/>
+          <rect x="538" y="250" width="130" height="45" rx="22" fill="#0f172a" transform="rotate(-12 538 250)"/>
+          <rect x="222" y="396" width="74" height="170" rx="37" fill="#fdba74" transform="rotate(28 222 396)"/>
+          <rect x="500" y="396" width="74" height="170" rx="37" fill="#fdba74" transform="rotate(-18 500 396)"/>
+          <rect x="190" y="372" width="74" height="20" rx="10" fill="#0ea5e9" transform="rotate(28 190 372)"/>
+          <rect x="495" y="383" width="74" height="20" rx="10" fill="#0ea5e9" transform="rotate(-18 495 383)"/>
+          <rect x="250" y="448" width="180" height="16" rx="8" fill="#cbd5e1" transform="rotate(12 250 448)"/>
+          <rect x="368" y="442" width="180" height="16" rx="8" fill="#cbd5e1" transform="rotate(12 368 442)"/>
+          <circle cx="260" cy="440" r="20" fill="#1e3a8a"/>
+          <circle cx="556" cy="478" r="20" fill="#1e3a8a"/>
+          <rect x="575" y="86" width="28" height="250" rx="14" fill="#334155" transform="rotate(34 575 86)"/>
+          <rect x="570" y="108" width="26" height="58" rx="12" fill="url(#g2)" transform="rotate(34 570 108)"/>
+          <circle cx="582" cy="315" r="15" fill="#0ea5e9"/>
+        </svg>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span>Kecepatan</span><strong><span id="speedVal">0</span> km/jam</strong></div>
+        <div class="stat"><span>Akurasi</span><strong><span id="accVal">-</span> m</strong></div>
+        <div class="stat"><span>Status</span><strong id="statVal">Siap</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-hd">
+      <div class="title">
+        <h2>Panel GPS</h2>
+        <span class="badge">OSM + GPS</span>
+      </div>
+      <div class="sub">Modern, bersih, dan langsung pakai.</div>
+    </div>
+    <div class="card-bd controls">
+      <div class="formgrid">
+        <div>
+          <label for="labelName">Nama tampilan</label>
+          <input id="labelName" value="Orang Terkait" placeholder="Nama tampilan" />
+        </div>
+        <div>
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option>FudzzDrivE — Driver Track</option>
+            <option>Share Lokasi Keluarga</option>
+            <option>Tracking Armada</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="formgrid">
+        <div>
+          <label for="lat">Latitude</label>
+          <input id="lat" placeholder="Akan terisi otomatis" />
+        </div>
+        <div>
+          <label for="lng">Longitude</label>
+          <input id="lng" placeholder="Akan terisi otomatis" />
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button class="primary" id="startBtn">Start GPS</button>
+        <button class="ghost" id="shareBtn">Buat Link</button>
+        <button class="ghost" id="copyBtn">Salin Link</button>
+        <button class="danger" id="stopBtn">Stop</button>
+      </div>
+
+      <div class="status">
+        <div class="dot" id="dot"></div>
+        <div>
+          <strong id="statusText">Belum aktif</strong>
+          <div class="small" id="detailText">Tekan Start GPS lalu izinkan lokasi di browser.</div>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info"><span>Posisi</span><strong id="posText">-</strong></div>
+        <div class="info"><span>Waktu</span><strong id="timeText">-</strong></div>
+        <div class="info"><span>Nama</span><strong id="nameText">Orang Terkait</strong></div>
+        <div class="info"><span>Mode</span><strong id="modeText">FudzzDrivE — Driver Track</strong></div>
+      </div>
+
+      <div class="linkbox" id="shareLinkBox">Link akan tampil di sini.</div>
+      <div class="foot">Link ini paling sederhana: berisi snapshot koordinat terbaru. Kalau mau benar-benar update lintas HP secara live, perlu backend kecil di tahap berikutnya.</div>
+    </div>
+  </section>
+</div>
+
+<section class="card mapCard" style="margin-top:16px">
+  <div class="card-bd">
+    <div class="title">
+      <h2>Peta</h2>
+      <span class="badge">OpenStreetMap</span>
+    </div>
+    <div class="mapWrap">
+      <div id="map"></div>
+    </div>
+  </div>
+</section>
+
+  </div>  <script>
+    const $ = (id) => document.getElementById(id);
+    const latEl = $("lat"), lngEl = $("lng"), labelName = $("labelName"), modeEl = $("mode");
+    const speedVal = $("speedVal"), accVal = $("accVal"), statVal = $("statVal");
+    const statusText = $("statusText"), detailText = $("detailText"), posText = $("posText");
+    const timeText = $("timeText"), nameText = $("nameText"), modeText = $("modeText");
+    const dot = $("dot"), liveChip = $("liveChip"), shareLinkBox = $("shareLinkBox");
+    const startBtn = $("startBtn"), stopBtn = $("stopBtn"), shareBtn = $("shareBtn"), copyBtn = $("copyBtn");
+
+    const url = new URL(location.href);
+    const shareId = url.searchParams.get('track') || `fd-${Math.random().toString(36).slice(2,8)}`;
+    const snapshotKey = `fd_snapshot_${shareId}`;
+
+    let watchId = null;
+    let currentSpeed = 0;
+    let map, marker, accuracyCircle;
+
+    function pad(n){ return String(n).padStart(2, '0'); }
+    function nowStr(){ const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+    function isNum(v){ return v !== '' && !Number.isNaN(Number(v)); }
+    function setLive(on){
+      dot.classList.toggle('on', on);
+      liveChip.textContent = on ? '● GPS aktif' : '● Siap dipakai';
+      statVal.textContent = on ? 'Online' : 'Siap';
+      statusText.textContent = on ? 'GPS aktif' : 'Belum aktif';
+      detailText.textContent = on
+        ? 'Koordinat dan kecepatan sedang dibaca dari perangkat ini.'
+        : 'Tekan Start GPS lalu izinkan lokasi di browser.';
+    }
+
+    function initMap(){
+      map = L.map('map', { zoomControl: true }).setView([-7.2458, 112.7378], 16);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      marker = L.marker([-7.2458, 112.7378]).addTo(map);
+      accuracyCircle = L.circle([-7.2458, 112.7378], { radius: 25, color: '#2563eb', fillColor: '#60a5fa', fillOpacity: 0.18 }).addTo(map);
+    }
+
+    function updateUI(lat, lng, accuracy, speedKmh){
+      latEl.value = Number(lat).toFixed(6);
+      lngEl.value = Number(lng).toFixed(6);
+      posText.textContent = `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
+      speedVal.textContent = Number(speedKmh || 0).toFixed(0);
+      accVal.textContent = Number(accuracy || 0).toFixed(0);
+      nameText.textContent = labelName.value.trim() || 'Orang Terkait';
+      modeText.textContent = modeEl.value;
+      timeText.textContent = nowStr();
+
+      const ll = [Number(lat), Number(lng)];
+      marker.setLatLng(ll);
+      accuracyCircle.setLatLng(ll).setRadius(Math.max(accuracy || 25, 10));
+      map.setView(ll, Math.max(map.getZoom(), 16), { animate: true });
+
+      const snapshot = {
+        lat: Number(lat),
+        lng: Number(lng),
+        accuracy: Number(accuracy || 0),
+        speedKmh: Number(speedKmh || 0),
+        name: labelName.value.trim() || 'Orang Terkait',
+        mode: modeEl.value,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem(snapshotKey, JSON.stringify(snapshot));
+      shareLinkBox.textContent = buildShareLink(snapshot);
+    }
+
+    function buildShareLink(snapshot){
+      const params = new URLSearchParams({
+        track: shareId,
+        lat: String(snapshot?.lat ?? latEl.value || ''),
+        lng: String(snapshot?.lng ?? lngEl.value || ''),
+        acc: String(snapshot?.accuracy ?? accElFallback()),
+        spd: String(snapshot?.speedKmh ?? speedVal.textContent || 0),
+        name: snapshot?.name ?? (labelName.value.trim() || 'Orang Terkait'),
+        mode: snapshot?.mode ?? modeEl.value,
+        t: String(Date.now())
+      });
+      return `${location.origin}${location.pathname}?${params.toString()}`;
+    }
+
+    function accElFallback(){ return Number(accVal.textContent || 0); }
+
+    function copyLink(){
+      const snap = getSnapshot();
+      const link = buildShareLink(snap);
+      navigator.clipboard.writeText(link).then(() => {
+        detailText.textContent = 'Link berhasil disalin.';
+      }).catch(() => prompt('Salin link ini:', link));
+    }
+
+    function getSnapshot(){
+      const raw = localStorage.getItem(snapshotKey);
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    function showFromUrl(){
+      const sp = new URLSearchParams(location.search);
+      const lat = sp.get('lat'), lng = sp.get('lng');
+      const acc = sp.get('acc') || 0;
+      const spd = sp.get('spd') || 0;
+      const name = sp.get('name') || 'Orang Terkait';
+      const mode = sp.get('mode') || 'FudzzDrivE — Driver Track';
+      if (isNum(lat) && isNum(lng)) {
+        labelName.value = name;
+        modeEl.value = mode;
+        updateUI(lat, lng, acc, spd);
+        statusText.textContent = 'Membuka link';
+        detailText.textContent = 'Data dibaca dari parameter link.';
+        setLive(true);
+      }
+    }
+
+    function startGPS(){
+      if (!navigator.geolocation) {
+        alert('Browser ini tidak mendukung GPS.');
+        return;
+      }
+      navigator.geolocation.clearWatch?.(watchId);
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const { latitude, longitude, accuracy, speed } = pos.coords;
+          const spdKmh = speed == null ? 0 : speed * 3.6;
+          updateUI(latitude, longitude, accuracy, spdKmh);
+          setLive(true);
+        },
+        (err) => {
+          setLive(false);
+          detailText.textContent = `GPS error: ${err.message}`;
+        },
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
+      );
+    }
+
+    function stopGPS(){
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+      setLive(false);
+      statVal.textContent = 'Siap';
+      detailText.textContent = 'Tracking dihentikan.';
+    }
+
+    startBtn.addEventListener('click', startGPS);
+    stopBtn.addEventListener('click', stopGPS);
+    shareBtn.addEventListener('click', () => { shareLinkBox.textContent = buildShareLink(getSnapshot()); });
+    copyBtn.addEventListener('click', copyLink);
+    [labelName, modeEl].forEach(el => el.addEventListener('input', () => {
+      nameText.textContent = labelName.value.trim() || 'Orang Terkait';
+      modeText.textContent = modeEl.value;
+      if (latEl.value && lngEl.value) shareLinkBox.textContent = buildShareLink(getSnapshot());
+    }));
+
+    setInterval(() => { timeText.textContent = nowStr(); }, 1000);
+    initMap();
+    showFromUrl();
+    if (!shareLinkBox.textContent || shareLinkBox.textContent === 'Link akan tampil di sini.') {
+      shareLinkBox.textContent = buildShareLink(getSnapshot());
+    }
+    setLive(false);
+    timeText.textContent = nowStr();
+  </script></body>
+</html>
