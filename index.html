@@ -274,7 +274,26 @@
   </div>
 </section>
 
-  </div>  <script>
+  </div>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCZpum5HVxo3l_u6NTTocac07rcXNqruQE",
+  authDomain: "fudzzdrive.firebaseapp.com",
+  databaseURL: "https://fudzzdrive-default-rtdb.firebaseio.com",
+  projectId: "fudzzdrive",
+  storageBucket: "fudzzdrive.firebasestorage.app",
+  messagingSenderId: "458154156624",
+  appId: "1:458154156624:web:583e8060ec59873665a755"
+};
+
+// INIT
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+</script>
+  <script>
     const $ = (id) => document.getElementById(id);
     const latEl = $("lat"), lngEl = $("lng"), labelName = $("labelName"), modeEl = $("mode");
     const speedVal = $("speedVal"), accVal = $("accVal"), statVal = $("statVal");
@@ -304,7 +323,23 @@
         : 'Tekan Start GPS lalu izinkan lokasi di browser.';
     }
 
-    function initMap(){
+    function initMap();
+// 🔥 LISTENER FIREBASE (VIEWER)
+db.ref("tracking/" + shareId).on("value", (snap) => {
+  const d = snap.val();
+  if (!d) return;
+
+  const { lat, lng, speed, acc } = d;
+
+  // update marker
+  marker.setLatLng([lat, lng]);
+  map.setView([lat, lng]);
+
+  // update UI
+  speedVal.textContent = Math.round(speed);
+  accVal.textContent = Math.round(acc);
+  posText.textContent = lat.toFixed(6) + ", " + lng.toFixed(6);
+});
       map = L.map('map', { zoomControl: true }).setView([-7.2458, 112.7378], 16);
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -449,23 +484,5 @@
     setLive(false);
     timeText.textContent = nowStr();
   </script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyCZpum5HVxo3l_u6NTTocac07rcXNqruQE",
-  authDomain: "fudzzdrive.firebaseapp.com",
-  databaseURL: "https://fudzzdrive-default-rtdb.firebaseio.com",
-  projectId: "fudzzdrive",
-  storageBucket: "fudzzdrive.firebasestorage.app",
-  messagingSenderId: "458154156624",
-  appId: "1:458154156624:web:583e8060ec59873665a755"
-};
-
-// INIT
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-</script>
 </body>
 </html>
